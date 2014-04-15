@@ -37,8 +37,18 @@ def fetch_latest_id():
 def tags_to_string(hashtags):
   tag_list = ''
   for tag in hashtags:
-    tag_list += tag['text']+' '
+    tag_list += split_on_caps(tag['text'])+' '
   return tag_list
+
+# split a string if it contains capital letters
+def split_on_caps(string):
+  result = ''
+  for i in range(len(string)):
+    # check if a letter is upper case
+    if (ord(string[i]) - ord('A')) < 26 and i > 0:
+      return string[:i]+' '+split_on_caps(string[i:])
+  return string
+
 
 if __name__ == '__main__':
 
@@ -80,10 +90,16 @@ if __name__ == '__main__':
         if tag_list != '':
           # search Oyster API
           try:
-            oyster_books = o.search(tag_list)
+            oyster_books = o.book_search(tag_list)
             for book in oyster_books:
-              msg = 'Hey @'+tweeter+'! Try "%s" by %s!' % (book.title,
-                                                           book.author)
+              title  = book.title
+              author = book.author
+              uuid   = book.uuid
+              # slug is not a supported field in SimpleBookResource, neither is
+              # web_url...
+              # slug = book.slug
+              # link = 'https://oysterbooks.com/%s/%s' % (uuid,slug)
+              msg  = 'Hey @%s! Try "%s" by %s' % (tweeter, title, author)
               if len(msg) <= 140:
                 t.statuses.update(status=msg)
                 count += 1
@@ -100,5 +116,4 @@ if __name__ == '__main__':
     print 'replied to '+str(count)+' tweets!'
     print 'going to sleep...'
     time.sleep(30)
-
 
