@@ -20,8 +20,8 @@ Then clone this repository to your machine. Copy the username of your Twitter
 account into the BOT\_NAME variable declarations at the top of both bot.py and 
 setup.py. 
 
-Create a file called .obrc and add the Oyster Python Client library to your 
-PYTHONPATH. Also create environment variables for your Twitter and Oyster API 
+Create a file called .obrc that adds the Oyster Python Client library to your 
+PYTHONPATH and exports environment variables for your Twitter and Oyster API 
 authentication keys, following the naming conventions in bot.py.
 
 Logout and login to the machine again, and then finally run setup.py to
