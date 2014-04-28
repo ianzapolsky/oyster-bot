@@ -94,7 +94,7 @@ if __name__ == '__main__':
             title  = book.title
             author = book.author
             uuid   = book.uuid
-            link   = 'https://www.oysterbooks.com/%s' % (uuid)
+            link   = 'https://www.oysterbooks.com/book/%s' % (uuid)
             msg    = 'Hey @%s! Try "%s" by %s ' % (tweeter, title, author)
             if len(msg) <= 140:
               msg += link
