@@ -1,4 +1,4 @@
-# bot.py, an experimentation with Twitter bots
+# bot.py, the main script for OYSTERBOT
 #
 # Replies to tweets with a book recommendation fetched via the Oyster API
 # based on hashtags contained within the tweet.
@@ -68,52 +68,51 @@ if __name__ == '__main__':
     host         = 'api.oysterbooks.com',
   )
 
-  # initialize latest_id to the most recent mention of @BOT_NAME
-  latest_id = fetch_latest_id()
+  # read in the latest id from the last check
+  f = open('.latest_id', 'r')
+  latest_id = f.read().rstrip()
+  f.close()
 
-  # infinite loop to continously reply to new, properly formatted tweets
-  while True:
+  # check for unseen tweets since the latest id
+  results = fetch_unseen_mentions(latest_id)
+  count = 0
 
-    print 'waking up!'
-    results = fetch_unseen_mentions(latest_id)
-    count = 0
+  if not results:
+    print 'no new tweets.'
+  else:
+    for tweet in reversed(results):
 
-    if not results:
-      print 'no new tweets.'
-    else:
-      for tweet in reversed(results):
+      tweeter  = tweet['user']['screen_name']
+      hashtags = tweet['entities']['hashtags']
+      tag_list = tags_to_string(hashtags)
 
-        tweeter  = tweet['user']['screen_name']
-        hashtags = tweet['entities']['hashtags']
-        tag_list = tags_to_string(hashtags)
+      if tag_list != '':
+        # search Oyster API
+        oyster_books = o.book_search(tag_list)
+        if len(oyster_books) > 0:
+          for book in oyster_books:
+            title  = book.title
+            author = book.author
+            uuid   = book.uuid
+            link   = 'https://www.oysterbooks.com/%s' % (uuid)
+            msg    = 'Hey @%s! Try "%s" by %s ' % (tweeter, title, author)
+            if len(msg) <= 140:
+              msg += link
+              t.statuses.update(status=msg)
+              count += 1
+              break
+        else:
+          msg = "Hey @%s! We coudn't find any matches for those hashtags. Sorry!" % (tweeter)
+          t.statuses.update(status=msg)
+          count += 1
 
-        if tag_list != '':
-          # search Oyster API
-          try:
-            oyster_books = o.book_search(tag_list)
-            for book in oyster_books:
-              title  = book.title
-              author = book.author
-              uuid   = book.uuid
-              # slug is not a supported field in SimpleBookResource, neither is
-              # web_url...
-              # slug = book.slug
-              # link = 'https://oysterbooks.com/%s/%s' % (uuid,slug)
-              msg  = 'Hey @%s! Try "%s" by %s' % (tweeter, title, author)
-              if len(msg) <= 140:
-                t.statuses.update(status=msg)
-                count += 1
-                break
-          except:
-            t.statuses.update(
-              status="Hey @"+tweeter+"! We coudn't find any matches for those hashtags. Sorry!")
-            count += 1
+      latest_id = str(tweet['id'])
 
-        latest_id = tweet['id']
+    # write the new latest_id to the file
+    f = open('.latest_id', 'w')
+    f.write(latest_id)
+    f.close()
 
-    # sleep 60 seconds at the end of each loop to avoid going over API
-    # restrictions (180 per 15-minute-window in 1.1)
-    print 'replied to '+str(count)+' tweets!'
-    print 'going to sleep...'
-    time.sleep(30)
+    # print out statistics
+    print 'responded to '+str(count)+' tweets!'
 
